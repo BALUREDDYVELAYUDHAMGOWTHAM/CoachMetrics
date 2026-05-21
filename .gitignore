@@ -1,4 +1,17 @@
+# Visual Studio files
 .vs/
 *.vsidx
+
+# Build output
 backend/target/
+target/
+
+# Compiled files
 *.class
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
