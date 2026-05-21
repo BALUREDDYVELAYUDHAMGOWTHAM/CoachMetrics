@@ -1,2 +1,4 @@
 .vs/
 *.vsidx
+backend/target/
+*.class
