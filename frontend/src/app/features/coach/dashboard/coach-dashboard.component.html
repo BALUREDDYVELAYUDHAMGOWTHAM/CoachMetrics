@@ -1,0 +1,68 @@
+<!-- coach-dashboard.component.html -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Coach Dashboard</h2>
+      <p>Your mentor activity overview · Session summary · Recent events</p>
+    </div>
+    <button class="btn-amber" (click)="load()"><mat-icon>refresh</mat-icon> Refresh</button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <ng-container *ngIf="!loading && stats">
+
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+      <div class="cm-kpi" *ngFor="let k of kpis">
+        <div class="cm-kpi-icon" [style.background]="k.iconBg">
+          <mat-icon [style.color]="k.iconColor">{{ k.icon }}</mat-icon>
+        </div>
+        <div class="cm-kpi-body">
+          <div class="cm-kpi-label">{{ k.label }}</div>
+          <div class="cm-kpi-value">{{ k.value }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-row">
+
+      <!-- Quick Actions -->
+      <div class="cm-card">
+        <div class="cm-card-header">
+          <h3><mat-icon>bolt</mat-icon> Quick Actions</h3>
+        </div>
+        <div class="quick-actions">
+          <div class="qa-label">MANAGE</div>
+          <div class="qa-btns">
+            <button class="btn-amber" routerLink="/coach/mentors"><mat-icon>group_add</mat-icon> Add Mentor</button>
+            <button class="btn-outline" routerLink="/coach/tracker"><mat-icon>event_available</mat-icon> Track Sessions</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="cm-card activity-card">
+        <div class="cm-card-header">
+          <h3><mat-icon>history</mat-icon> Recent Activity</h3>
+          <span style="font-size:11px;color:#94A3B8">Last 10 events</span>
+        </div>
+        <div class="cm-empty" *ngIf="!stats.recentActivity?.length">
+          <mat-icon>history</mat-icon><p>No activity yet</p>
+        </div>
+        <div class="activity-list">
+          <div class="act-row" *ngFor="let a of stats.recentActivity">
+            <div class="act-icon" [ngClass]="getActivityDot(a.activityType)">
+              <mat-icon>{{ getActivityIcon(a.activityType) }}</mat-icon>
+            </div>
+            <div class="act-body">
+              <div class="act-desc">{{ a.description }}</div>
+              <div class="act-meta">{{ a.performedBy }} · {{ a.createdAt | date:'short' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+</div>

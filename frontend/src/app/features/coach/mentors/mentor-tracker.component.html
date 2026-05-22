@@ -1,0 +1,174 @@
+<!-- mentor-tracker.component.html -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Weekly Mentor Connect Tracker</h2>
+      <p>14-week schedule · Click any cell to update connect status, mode, hours and reason</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-outline" (click)="load()"><mat-icon>refresh</mat-icon> Refresh</button>
+      <button class="btn-export" (click)="exportCsv()"><mat-icon>download</mat-icon> Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend-bar">
+    <div class="leg-item"><div class="leg-dot done"></div><span>Connect Happened</span></div>
+    <div class="leg-item"><div class="leg-dot miss"></div><span>Not Happened</span></div>
+    <div class="leg-item"><div class="leg-dot empty"></div><span>Not Recorded</span></div>
+    <div class="leg-item mode-v">V = Virtual</div>
+    <div class="leg-item mode-p">P = In-Person</div>
+    <div class="leg-item mode-h">H = Hybrid</div>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <!-- The big tracker table -->
+  <div class="tracker-wrap" *ngIf="!loading">
+    <div class="cm-empty" *ngIf="!mentors.length">
+      <mat-icon>table_chart</mat-icon><p>No mentors assigned. Add mentors to track their connects.</p>
+    </div>
+
+    <div class="tracker-table-container" *ngIf="mentors.length">
+      <table class="tracker-table">
+        <thead>
+          <!-- Row 1: fixed cols + week headers -->
+          <tr class="header-row">
+            <th class="fix-col name-col">Mentor</th>
+            <th class="fix-col dept-col">Dept</th>
+            <th class="fix-col cohort-col">Cohort</th>
+            <th class="fix-col status-col">Status</th>
+            <th class="fix-col vertical-col">Vertical</th>
+            <th class="week-header" *ngFor="let w of weekRanges">{{ w }}</th>
+            <th class="fix-col total-col">Total<br>Sessions</th>
+            <th class="fix-col total-col">Total<br>Hours</th>
+          </tr>
+          <!-- Row 2: sub-headers for each week -->
+          <tr class="sub-header-row">
+            <th class="fix-col" colspan="5"></th>
+            <th class="sub-week" *ngFor="let w of weekRanges">
+              <span>Happened</span>
+              <span>Mode</span>
+              <span>Date</span>
+              <span>Hours</span>
+            </th>
+            <th class="fix-col" colspan="2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="data-row" *ngFor="let m of mentors; let ri = index" [class.alt-row]="ri%2===0">
+            <!-- Fixed mentor info -->
+            <td class="fix-col name-cell-td">
+              <div class="mentor-cell">
+                <div class="m-avatar" [class.sdet-av]="m.department==='SDET'" [class.dotnet-av]="m.department!='SDET'">{{ m.fullName[0] }}</div>
+                <div>
+                  <div class="m-name">{{ m.fullName }}</div>
+                  <div class="m-email">{{ m.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="fix-col">
+              <span class="badge" [class.sdet]="m.department==='SDET'" [class.dotnet]="m.department!='SDET'">
+                {{ m.department === 'DOTNET' ? '.NET' : m.department }}
+              </span>
+            </td>
+            <td class="fix-col cohort-td">{{ m.cohortCode || '—' }}</td>
+            <td class="fix-col">
+              <span class="badge" [class.active-tr]="m.trainingStatus==='ACTIVE'"
+                    [class.on-hold]="m.trainingStatus==='ON_HOLD'"
+                    [class.completed]="m.trainingStatus==='COMPLETED'"
+                    [class.dropped]="m.trainingStatus==='DROPPED'">
+                {{ m.trainingStatus | titlecase }}
+              </span>
+            </td>
+            <td class="fix-col vertical-td">{{ m.verticalMapping || '—' }}</td>
+
+            <!-- 14 week cells -->
+            <td class="week-cell-td"
+                *ngFor="let w of weekRanges; let wi = index"
+                [ngClass]="getCellClass(getConnect(m, wi+1))"
+                (click)="openEdit(getConnect(m, wi+1))"
+                [matTooltip]="getConnect(m,wi+1)?.reason || ''">
+              <ng-container *ngIf="getConnect(m, wi+1) as c; else emptyCell">
+                <div class="cell-happened" *ngIf="c.happened">
+                  <span class="cell-mode" [style.color]="getModeColor(c.mode)">{{ getModeLabel(c.mode) }}</span>
+                  <span class="cell-hrs">{{ c.hours || 0 }}h</span>
+                  <span class="cell-date" *ngIf="c.connectDate">{{ c.connectDate | date:'d/M' }}</span>
+                </div>
+                <div class="cell-missed" *ngIf="!c.happened">
+                  <mat-icon>close</mat-icon>
+                  <span *ngIf="c.reason" class="cell-reason">{{ c.reason | slice:0:8 }}</span>
+                </div>
+              </ng-container>
+              <ng-template #emptyCell><div class="cell-empty-inner">—</div></ng-template>
+            </td>
+
+            <!-- Totals -->
+            <td class="fix-col total-td"><strong style="color:#D97706">{{ getTotalSessions(m) }}</strong></td>
+            <td class="fix-col total-td"><strong style="color:#059669">{{ getTotalHours(m) | number:'1.0-1' }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Connect Popup -->
+<div class="modal-overlay" *ngIf="editingConnect" (click)="editingConnect=null">
+  <div class="edit-popup" (click)="$event.stopPropagation()">
+    <div class="popup-header">
+      <mat-icon>edit_calendar</mat-icon>
+      <span>Update Connect — Week {{ editingConnect.weekNumber }}</span>
+      <button class="popup-close" (click)="editingConnect=null"><mat-icon>close</mat-icon></button>
+    </div>
+    <div class="popup-body">
+      <div class="week-tag">{{ editingConnect.weekRange }}</div>
+      <div class="mentor-tag">{{ editingConnect.mentorName }}</div>
+
+      <div class="popup-field">
+        <label>Did connect happen?</label>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" [(ngModel)]="editForm.happened">
+            <span class="slider"></span>
+          </label>
+          <span class="badge" [class.yes]="editForm.happened" [class.no]="!editForm.happened">
+            {{ editForm.happened ? 'Yes — Happened' : 'No — Not Happened' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="popup-field" *ngIf="editForm.happened">
+        <label>Mode</label>
+        <select [(ngModel)]="editForm.mode">
+          <option value="VIRTUAL">Virtual</option>
+          <option value="IN_PERSON">In Person</option>
+          <option value="HYBRID">Hybrid</option>
+        </select>
+      </div>
+
+      <div class="popup-field" *ngIf="editForm.happened">
+        <label>Date</label>
+        <input type="date" [(ngModel)]="editForm.connectDate">
+      </div>
+
+      <div class="popup-field" *ngIf="editForm.happened">
+        <label>Hours</label>
+        <input type="number" [(ngModel)]="editForm.hours" step="0.5" min="0" placeholder="e.g. 1.5">
+      </div>
+
+      <div class="popup-field" *ngIf="!editForm.happened">
+        <label>Reason not happened / if Virtual</label>
+        <textarea [(ngModel)]="editForm.reason" rows="3" placeholder="e.g. Mentor on leave, or reason for virtual mode..."></textarea>
+      </div>
+
+      <div class="popup-footer">
+        <button class="btn-outline" (click)="editingConnect=null">Cancel</button>
+        <button class="btn-amber" (click)="saveConnect()" [disabled]="saving">
+          <mat-spinner diameter="16" *ngIf="saving" style="display:inline-block;margin-right:4px"></mat-spinner>
+          {{ saving ? 'Saving...' : 'Save Connect' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

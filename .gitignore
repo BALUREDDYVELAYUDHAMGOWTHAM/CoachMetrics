@@ -1,17 +1,66 @@
-# Visual Studio files
+# =========================
+# GENERAL
+# =========================
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / TOOLING
+# =========================
 .vs/
+.vscode/
+.idea/
 *.vsidx
 
-# Build output
+# =========================
+# JAVA BACKEND
+# =========================
 backend/target/
+backend/target/**
 target/
-
-# Compiled files
 *.class
 
-# Logs
-*.log
+# Eclipse / STS
+.project
+.classpath
+.settings/
 
-# OS files
+# =========================
+# ANGULAR FRONTEND
+# =========================
+
+# Node modules (VERY IMPORTANT)
+frontend/node_modules/
+node_modules/
+
+# Angular cache (MAIN PROBLEM)
+frontend/.angular/
+.angular/
+
+# Build output
+dist/
+frontend/dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Angular environment (optional)
+frontend/src/environments/*.local.ts
+
+# =========================
+# PACKAGE LOCK
+# =========================
+# Keep this if working in team (recommended)
+# package-lock.json
+
+# =========================
+# OS FILES
+# =========================
 .DS_Store
 Thumbs.db
