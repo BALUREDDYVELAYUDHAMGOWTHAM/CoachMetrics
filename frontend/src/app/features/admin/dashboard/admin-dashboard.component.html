@@ -1,0 +1,88 @@
+<!-- admin-dashboard.component.html -->
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Admin Dashboard</h2>
+      <p>System-wide mentor activity overview · Department summary · Recent events</p>
+    </div>
+    <button class="btn-amber" (click)="load()"><mat-icon>refresh</mat-icon> Refresh</button>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading"><mat-spinner diameter="40"></mat-spinner></div>
+
+  <ng-container *ngIf="!loading && stats">
+
+    <!-- KPI Row — kpis array built in TS, no inline escaped strings -->
+    <div class="kpi-grid">
+      <div class="cm-kpi" *ngFor="let k of kpis">
+        <div class="cm-kpi-icon" [style.background]="k.iconBg">
+          <mat-icon [style.color]="k.iconColor">{{ k.icon }}</mat-icon>
+        </div>
+        <div class="cm-kpi-body">
+          <div class="cm-kpi-label">{{ k.label }}</div>
+          <div class="cm-kpi-value">{{ k.value }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-row">
+
+      <!-- Dept Summary + Quick Actions -->
+      <div class="cm-card">
+        <div class="cm-card-header">
+          <h3><mat-icon>donut_large</mat-icon> Department Summary</h3>
+        </div>
+
+        <div class="dept-bars">
+          <div class="dept-bar-item" *ngFor="let d of getDeptBars()">
+            <div class="db-label">
+              <span class="badge" [class.sdet]="d.name==='SDET'" [class.dotnet]="d.name!='SDET'">
+                {{ d.name === 'SDET' ? 'SDET' : '.NET/C#' }}
+              </span>
+              <span class="db-count">{{ d.count }} mentors</span>
+            </div>
+            <div class="db-track">
+              <div class="db-fill" [style.width.%]="d.pct" [style.background]="d.color"></div>
+            </div>
+            <span class="db-pct">{{ d.pct }}%</span>
+          </div>
+          <div class="cm-empty" *ngIf="!getDeptBars().length">
+            <mat-icon>bar_chart</mat-icon><p>No mentor data yet</p>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="qa-label">QUICK ACTIONS</div>
+          <div class="qa-btns">
+            <button class="btn-amber" routerLink="/admin/coaches"><mat-icon>person_add</mat-icon> Add Coach</button>
+            <button class="btn-outline" routerLink="/admin/reports"><mat-icon>bar_chart</mat-icon> View Reports</button>
+            <button class="btn-outline" routerLink="/admin/mentors"><mat-icon>group_add</mat-icon> View Mentors</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="cm-card activity-card">
+        <div class="cm-card-header">
+          <h3><mat-icon>history</mat-icon> Recent Activity</h3>
+          <span style="font-size:11px;color:#94A3B8">Last 10 events</span>
+        </div>
+        <div class="cm-empty" *ngIf="!stats.recentActivity?.length">
+          <mat-icon>history</mat-icon><p>No activity yet</p>
+        </div>
+        <div class="activity-list">
+          <div class="act-row" *ngFor="let a of stats.recentActivity">
+            <div class="act-icon" [ngClass]="getActivityDot(a.activityType)">
+              <mat-icon>{{ getActivityIcon(a.activityType) }}</mat-icon>
+            </div>
+            <div class="act-body">
+              <div class="act-desc">{{ a.description }}</div>
+              <div class="act-meta">{{ a.performedBy }} · {{ a.createdAt | date:'short' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+</div>
